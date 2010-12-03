@@ -86,7 +86,8 @@ Now, if I also provide this "specials" file:
         wget -O $file http://meyerweb.com/eric/tools/css/reset/reset.css
 
 startit will use the provided commands instead of the default `touch` for
-`jquery.js` and `reset.css`.
+`jquery.js` and `reset.css`, replacing the `$file` placeholder with
+`/path/to/jquery.js` and `/path/to/reset.css`.
 
 So, 
 
