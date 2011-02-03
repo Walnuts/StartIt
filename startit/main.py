@@ -1,16 +1,29 @@
 import os
+from jinja2 import Environment, Template
 
 class Project(object):
-    structure_tokens = ['$project', '$titlecase', '$lowercase', '$camelcase',\
-            '$uppercase']
-    specials_tokens = ['$file']
+    """
+    so far I know you can use {{ project }} in the structure file,
+    and the |lower filter.
 
-    def __init__(self, cwd, project):
-        self.cwd = cwd
-        self.project = project
+    I plan on implementing/making sure the |title, |camel, and |upper
+    filters work in the structure and specials files, and the |lower needs
+    to work in the specials file.
+
+    I also need to make sure {{ file }} can be used in the specials file.
+    That probably means I'm gonna have to think about the order that everything
+    is getting parsed in, because the filename isn't known till after the 
+    yaml is parsed, but the yaml probably won't parse correctly until the 
+    jinja parser is run...
+
+    """
+
+    def __init__(self, project_dir, project_title):
+        self.project_dir = project_dir
+        self.project_title = project_title
 
     def _proj_path(self, *args):
-        return os.path.join(self.cwd, *args)
+        return os.path.join(self.project_dir, *args)
 
     def parse_tree(self, coll, specials={}, collected_filename=""):
         if isinstance(coll, list):
@@ -32,19 +45,40 @@ class Project(object):
         else:
             if coll is not None:
                 fullpath = self._proj_path(collected_filename, coll)
-                if coll not in specials.keys():
+                if coll not in specials:
                     print("File: %s\n" % (fullpath,))
                 else:
                     print("File: %s\n\tRule: %s" % (fullpath, specials[coll]))
 
 
+def parse_file(yml, *args, **kwargs):
+    def lower(mystr):
+        title = ""
+        for idx, char in enumerate(mystr):
+            if idx != 0 and char.isupper():
+                title = "{0}_{1}".format(title, char.lower())
+            else:
+                title = "{0}{1}".format(title, char.lower())
+        return title
+
+    env = Environment()
+    env.filters['lower'] = lower
+    struct_template = env.from_string(yml['structure'])
+    specia_template = env.from_string(yml['specials'])
+    
+    return (
+            yaml.load( struct_template.render(**kwargs) ),
+            yaml.load( specia_template.render(**kwargs) )
+            )
+    
+
 if __name__ == "__main__":
-    from pprint import pprint
     import yaml
+    from jinja2 import Template
 
     structure_file =\
     """
-    - $project:
+    - {{project}}:
         - static:
             - css:
                 - reset.css
@@ -58,7 +92,7 @@ if __name__ == "__main__":
             - base.html
         - tests:
             - __init__.py
-            - project_tests.py
+            - {{project|lower}}_tests.py
         - __init__.py
         - main.py
         - controllers.py
@@ -69,15 +103,19 @@ if __name__ == "__main__":
     specials_file =\
     """
     jquery.js : |
-        wget -O $file http://code.jquery.com/jquery-1.4.3.min.js
+        wget -O {{ file }} http://code.jquery.com/jquery-1.4.3.min.js
     reset.css : |
-        wget -O $file http://meyerweb.com/eric/tools/css/reset/reset.css
+        wget -O {{ file }} http://meyerweb.com/eric/tools/css/reset/reset.css
     """
 
-    project_structure = yaml.load(structure_file)
-    project_specials = yaml.load(specials_file)
+    project = "MyProject"
+    cwd = "/Users/pwoolcoc/Python"
 
-    myproj = Project("/Users/pwoolcoc/Projects", "MyProject")
-    myproj.parse_tree(project_structure, project_specials)
+    
+    st, sp = parse_file({"structure": structure_file,\
+            "specials":specials_file}, project=project)
+
+    myproj = Project(cwd, project)
+    myproj.parse_tree(st, sp)
 
 
