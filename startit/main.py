@@ -15,7 +15,6 @@ class Project(object):
     is getting parsed in, because the filename isn't known till after the 
     yaml is parsed, but the yaml probably won't parse correctly until the 
     jinja parser is run...
-
     """
 
     def __init__(self, project_dir, project_title):
@@ -63,14 +62,51 @@ def parse_file(yml, *args, **kwargs):
 
     env = Environment()
     env.filters['lower'] = lower
-    struct_template = env.from_string(yml['structure'])
-    specia_template = env.from_string(yml['specials'])
+
+    template = env.from_string( yml )
+
+    return yaml.load( template.render( **kwargs ) )
+
+
+def main(argc, argv):
+    import optparse
+    import logging
+
+    logger = logging.getLogger("startit.logger")
+    logger.setLevel(logging.DEBUG)
+    ch = logging.StreamHandler()
+    ch.setLevel(logging.DEBUG)
+    logger.addHandler(ch)
+
+    usage = "usage: %prog [options] definiton project_name"
+    parser = optparse.OptionParser(usage=usage)
     
-    return (
-            yaml.load( struct_template.render(**kwargs) ),
-            yaml.load( specia_template.render(**kwargs) )
-            )
-    
+    parser.add_option("-s", "--specials", dest="specials",\
+            help="Special cases file")
+    parser.add_option("-p", "--path", dest="path",\
+            help="Optional path for the project. Defaults to CWD")
+    parser.add_option("-a", "--add-definition", dest="add_def_file",\
+            help="Add a definiton file to the startit database")
+    parser.add_option("-l", "--list-definitions", dest="list_defs",\
+            help="List all the available definitions")
+    parser.add_option("-P", "--print-definition", dest="print_def",\
+            help="`cat` the selected definiton")
+    parser.add_option("-x", "--remove-definition", dest="del_def",\
+            help="Remove the selected definition from the startit database")
+
+    options, args = parser.parse_args(argv)
+
+    logger.debug(options)
+    logger.debug(args)
+
+    """
+    structure = parse_file(structure_file, project=project)
+    specials = parse_file(specials_file, project=project)
+
+    myproj = Project( project_dir, project_title )
+    myproj.parse_tree( structure, specials )
+    """
+
 
 if __name__ == "__main__":
     import yaml
@@ -108,14 +144,12 @@ if __name__ == "__main__":
         wget -O {{ file }} http://meyerweb.com/eric/tools/css/reset/reset.css
     """
 
-    project = "MyProject"
-    cwd = "/Users/pwoolcoc/Python"
+    project_title = "MyProject"
+    project_dir = "/Users/pwoolcoc/Python"
 
-    
-    st, sp = parse_file({"structure": structure_file,\
-            "specials":specials_file}, project=project)
 
-    myproj = Project(cwd, project)
-    myproj.parse_tree(st, sp)
 
+    argv = "startit -p {0} {1}".format( project_dir, project_title )
+
+    main(4, argv.split(" "))
 

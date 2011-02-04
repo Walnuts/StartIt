@@ -9,9 +9,9 @@ now. Here is the planned usage:
 
 Create a YAML file as a project skeleton:
 
-    # project.yaml
-    - $project
-        - $project$lowercase
+    # project.yml
+    - {{ project.title }}
+        - {{ project.title | lower }}
             - __init__.py
         - tests
             - $project$lowercase_tests.py
@@ -52,8 +52,8 @@ files, respectively. However, you can provide an additional YAML file to
 alter this behavior. Here is another project structure definition that I use
 for web.py projects:
 
-    # webpy.yaml
-    - $project
+    # webpy.yml
+    - {{ project.title }}
         - static
             - css
                 - reset.css
@@ -68,9 +68,9 @@ for web.py projects:
             - base.html
         - tests
             - __init__.py
-            - $project$lowercase_tests.py
+            - {{ project.title | lower }}_tests.py
         - __init__.py
-        - $project$lowercase.py
+        - {{ project.title | lower }}.py
         - controllers.py
         - models.py
         - settings.py
@@ -81,9 +81,9 @@ Now, if I also provide this "specials" file:
 
     # webpy_specials.yaml
     jquery.js: |
-        wget -O $file http://code.jquery.com/jquery-1.4.3.min.js
+        wget -O {{ file }} http://code.jquery.com/jquery-1.4.3.min.js
     reset.css: |
-        wget -O $file http://meyerweb.com/eric/tools/css/reset/reset.css
+        wget -O {{ file }} http://meyerweb.com/eric/tools/css/reset/reset.css
 
 startit will use the provided commands instead of the default `touch` for
 `jquery.js` and `reset.css`, replacing the `$file` placeholder with
@@ -129,3 +129,4 @@ working version done over the weekend.
 * * *
 
 WP
+
